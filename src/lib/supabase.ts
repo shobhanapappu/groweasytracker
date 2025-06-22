@@ -135,6 +135,24 @@ export const resendVerificationEmail = async (email: string) => {
   return { error };
 };
 
+// Reset password (forgot password)
+export const resetPassword = async (email: string) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`
+  });
+  
+  return { error };
+};
+
+// Update password after reset
+export const updatePassword = async (newPassword: string) => {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  
+  return { error };
+};
+
 // Check if user email is confirmed
 export const isEmailConfirmed = async () => {
   const { user } = await getCurrentUser();

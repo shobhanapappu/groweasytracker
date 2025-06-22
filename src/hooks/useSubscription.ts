@@ -37,6 +37,7 @@ export const useSubscription = () => {
 
   const isPremium = subscription ? hasPremiumAccess(subscription) : false;
   const canAccessPremiumFeatures = isDemoUser ? false : isPremium;
+  const isTrial = !!(subscription?.plan === 'free' && subscription?.trial_end_date && new Date(subscription.trial_end_date) > new Date());
 
   return {
     subscription,
@@ -44,5 +45,6 @@ export const useSubscription = () => {
     isDemoUser,
     isPremium,
     canAccessPremiumFeatures,
+    isTrial,
   };
 };

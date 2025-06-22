@@ -1,97 +1,89 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const RAZORPAY_KEY_ID = 'rzp_live_jIyM6wEQQU9VPz';
-const ORDER_API = 'http://localhost:3000/create-order'; // Change if backend runs elsewhere
+interface RazorpayButtonProps {
+  amount: number;
+  billing: 'monthly' | 'yearly';
+}
 
-export const RazorpayButton: React.FC<{ amount: number; billing: 'monthly' | 'yearly' }> = ({ amount, billing }) => {
-  const loadRazorpayScript = () => {
+export const RazorpayButton: React.FC<RazorpayButtonProps> = ({ amount, billing }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handlePayment = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ billing }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create subscription');
+      }
+
+      const data = await response.json();
+      
+      const options = {
+        key: 'rzp_live_6XbictuHjDq9L1', // Using the provided test key
+        subscription_id: data.subscription_id,
+        name: 'GrowEasy Tracker',
+        description: `Premium Subscription (${billing})`,
+        handler: function (response: any) {
+          alert(`Subscription successful! Payment ID: ${response.razorpay_payment_id}`);
+          window.location.href = `/subscription?success=true`;
+        },
+        prefill: {
+          name: 'Customer Name',
+          email: 'customer@example.com',
+        },
+        theme: {
+          color: '#3b82f6',
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to initiate payment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadScript = (src: string) => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.src = src;
+      script.onload = () => {
+        resolve(true);
+      };
+      script.onerror = () => {
+        resolve(false);
+      };
       document.body.appendChild(script);
     });
   };
 
-  const handlePayment = async () => {
-    const res = await loadRazorpayScript();
+  const displayRazorpay = async () => {
+    const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
     if (!res) {
-      alert('Failed to load Razorpay SDK.');
+      alert('Razorpay SDK failed to load. Are you online?');
       return;
     }
-    try {
-      console.log('Creating order with:', { amount, billing });
-      const orderRes = await fetch(ORDER_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, billing }),
-      });
-      
-      if (!orderRes.ok) {
-        const errorData = await orderRes.json();
-        throw new Error(errorData.error || 'Failed to create order');
-      }
-
-      const data = await orderRes.json();
-      console.log('Order created:', data);
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      const options = {
-        key: RAZORPAY_KEY_ID,
-        amount: Math.round(amount * 100),
-        currency: 'INR',
-        name: 'GrowEasy Tracker',
-        description: `Premium Subscription (${billing})`,
-        order_id: data.order_id,
-        handler: function (response: any) {
-          console.log('Payment successful:', response);
-          alert(
-            `Payment Successful!\nPayment ID: ${response.razorpay_payment_id}\nOrder ID: ${response.razorpay_order_id}\nSignature: ${response.razorpay_signature}`
-          );
-        },
-        prefill: {
-          name: 'Test Customer',
-          email: 'test@example.com',
-          contact: '9999999999',
-        },
-        theme: {
-          color: '#3399cc',
-        },
-        modal: {
-          ondismiss: function() {
-            console.log('Checkout form closed');
-          }
-        }
-      };
-
-      try {
-        // @ts-ignore
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response: any) {
-          console.error('Payment failed:', response.error);
-          alert(`Payment failed: ${response.error.description}`);
-        });
-        rzp.open();
-      } catch (error) {
-        console.error('Error opening Razorpay:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert(error instanceof Error ? error.message : 'Failed to initiate payment');
-    }
+    handlePayment();
   };
 
   return (
     <button
-      onClick={handlePayment}
-      className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+      onClick={displayRazorpay}
+      disabled={loading}
+      className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-xl font-semibold hover:scale-105 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {`Subscribe (${billing === 'yearly' ? `₹${amount.toLocaleString()}/year` : `₹${amount.toLocaleString()}/month`})`}
+      {loading ? 'Processing...' : `Subscribe (₹${amount}/${billing === 'monthly' ? 'month' : 'year'})`}
     </button>
   );
 };

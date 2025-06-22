@@ -10,6 +10,7 @@ import { RecentTransactions } from '../components/dashboard/RecentTransactions';
 import { Charts } from '../components/dashboard/Charts';
 import { DemoBanner } from '../components/dashboard/DemoBanner';
 import { SubscriptionBanner } from '../components/subscription/SubscriptionBanner';
+import { TrialBanner } from '../components/subscription/TrialBanner';
 import { PieChart as PieChartComponent } from '../components/dashboard/PieChart';
 import { Footer } from '../components/Footer';
 import { Toast } from '../components/Toast';
@@ -38,7 +39,7 @@ export const Dashboard: React.FC = () => {
   const [comprehensiveData, setComprehensiveData] = useState<any>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const navigate = useNavigate();
-  const { subscription, isDemoUser } = useSubscription();
+  const { subscription, isDemoUser, isTrial } = useSubscription();
 
   // Demo data for demo users
   const demoMetrics = {
@@ -144,10 +145,10 @@ export const Dashboard: React.FC = () => {
       ]);
 
       // Process monthly data
-      const monthlyData = processMonthlyData(monthlyResult.incomeData, monthlyResult.expenseData);
+      const monthlyData = processMonthlyData(monthlyResult.incomeData || [], monthlyResult.expenseData || []);
       
       // Process category data
-      const expenseCategories = processCategoryData(categoryResult.data);
+      const expenseCategories = processCategoryData(categoryResult.data || []);
 
       setChartData({
         monthlyData,
@@ -253,6 +254,9 @@ export const Dashboard: React.FC = () => {
         <main className="max-w-7xl mx-auto px-6 py-8">
           {/* Demo Banner */}
           {isDemoUser && <DemoBanner />}
+
+          {/* Trial Banner */}
+          {isTrial && <TrialBanner />}
 
           {/* Subscription Banner */}
           {!isDemoUser && <SubscriptionBanner subscription={subscription} />}

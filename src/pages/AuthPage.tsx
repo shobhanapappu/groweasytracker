@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Mail, Lock, User, ChevronDown, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Footer } from '../components/Footer';
@@ -220,18 +220,14 @@ export const AuthPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-6xl mx-auto px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg">
-              <Mail className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              GrowEasy Tracker
-            </span>
+      <header className="flex items-center justify-between p-6">
+        <Link to="/" className="flex items-center space-x-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">G</span>
           </div>
-          <ThemeToggle />
-        </div>
+          <span>GrowEasy Tracker</span>
+        </Link>
+        <ThemeToggle />
       </header>
 
       <main className="py-12 px-8">
@@ -554,9 +550,9 @@ export const AuthPage: React.FC = () => {
                         />
                         <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
                       </label>
-                      <a href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">
+                      <Link to="/forgot-password" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">
                         Forgot Password?
-                      </a>
+                      </Link>
                     </div>
                     <button
                       type="submit"

@@ -65,14 +65,14 @@ export const DashboardHeader: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <Link to="/dashboard" className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
               GrowEasy Tracker
             </span>
-          </div>
+          </Link>
 
           {/* Hamburger Menu for Screens <= 1300px */}
           <div className="hidden max-[1300px]:block">

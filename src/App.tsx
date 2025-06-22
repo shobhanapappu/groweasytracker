@@ -5,6 +5,8 @@ import { HomePage } from './pages/HomePage';
 import { Dashboard } from './pages/Dashboard';
 import { AuthPage } from './pages/AuthPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 import { Pricing } from './pages/Pricing';
 import { Subscription } from './pages/Subscription';
 import { Income } from './pages/Income';
@@ -27,6 +29,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/subscription" element={<Subscription />} />
