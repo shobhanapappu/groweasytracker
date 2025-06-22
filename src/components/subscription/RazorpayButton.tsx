@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 interface RazorpayButtonProps {
   amount: number;
   billing: 'monthly' | 'yearly';
+  paymentType: 'recurring' | 'one-time';
 }
 
-export const RazorpayButton: React.FC<RazorpayButtonProps> = ({ amount, billing }) => {
+export const RazorpayButton: React.FC<RazorpayButtonProps> = ({ amount, billing, paymentType }) => {
   const [loading, setLoading] = useState(false);
 
   const handlePayment = async () => {
@@ -16,7 +17,7 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({ amount, billing 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ billing }),
+        body: JSON.stringify({ amount, billing, paymentType }),
       });
 
       if (!response.ok) {
@@ -26,13 +27,12 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({ amount, billing 
 
       const data = await response.json();
       
-      const options = {
-        key: 'rzp_live_6XbictuHjDq9L1', // Using the provided test key
-        subscription_id: data.subscription_id,
+      const options: any = {
+        key: 'rzp_live_6XbictuHjDq9L1', // Using your live key
         name: 'GrowEasy Tracker',
-        description: `Premium Subscription (${billing})`,
+        description: `Premium Subscription - ${billing} (${paymentType})`,
         handler: function (response: any) {
-          alert(`Subscription successful! Payment ID: ${response.razorpay_payment_id}`);
+          alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}`);
           window.location.href = `/subscription?success=true`;
         },
         prefill: {
@@ -43,6 +43,14 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({ amount, billing 
           color: '#3b82f6',
         },
       };
+
+      // Add order_id for one-time or subscription_id for recurring
+      if (paymentType === 'one-time') {
+        options.amount = data.amount;
+        options.order_id = data.order_id;
+      } else {
+        options.subscription_id = data.subscription_id;
+      }
 
       const rzp = new window.Razorpay(options);
       rzp.open();
@@ -83,7 +91,7 @@ export const RazorpayButton: React.FC<RazorpayButtonProps> = ({ amount, billing 
       disabled={loading}
       className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-xl font-semibold hover:scale-105 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {loading ? 'Processing...' : `Subscribe (₹${amount}/${billing === 'monthly' ? 'month' : 'year'})`}
+      {loading ? 'Processing...' : `Pay ₹${amount} (${paymentType})`}
     </button>
   );
 };

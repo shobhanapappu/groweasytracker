@@ -55,6 +55,7 @@ const plans = [
 export const Pricing: React.FC = () => {
   const { theme } = useTheme();
   const [billing, setBilling] = React.useState<'monthly' | 'yearly'>('monthly');
+  const [paymentType, setPaymentType] = React.useState<'recurring' | 'one-time'>('recurring');
   const navigate = useNavigate();
 
   return (
@@ -85,6 +86,24 @@ export const Pricing: React.FC = () => {
               onClick={() => setBilling('yearly')}
             >
               Yearly <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-bold">10% OFF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Payment Type Toggle */}
+        <div className="flex justify-center mb-12">
+          <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+            <button
+              className={`px-6 py-2 rounded-xl font-semibold transition-colors duration-200 focus:outline-none ${paymentType === 'recurring' ? 'bg-white dark:bg-gray-900 text-primary-600 dark:text-primary-400 shadow' : 'text-gray-600 dark:text-gray-300'}`}
+              onClick={() => setPaymentType('recurring')}
+            >
+              Recurring
+            </button>
+            <button
+              className={`px-6 py-2 rounded-xl font-semibold transition-colors duration-200 focus:outline-none ${paymentType === 'one-time' ? 'bg-white dark:bg-gray-900 text-primary-600 dark:text-primary-400 shadow' : 'text-gray-600 dark:text-gray-300'}`}
+              onClick={() => setPaymentType('one-time')}
+            >
+              One-Time
             </button>
           </div>
         </div>
@@ -137,7 +156,7 @@ export const Pricing: React.FC = () => {
                   onClick={() => {
                     if (plan.name === 'Pro') {
                       const amount = billing === 'yearly' ? 3229 : 299;
-                      navigate('/subscription', { state: { billing, amount } });
+                      navigate('/subscription', { state: { billing, amount, paymentType } });
                     }
                   }}
                 >

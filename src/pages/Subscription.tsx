@@ -24,6 +24,7 @@ export const Subscription: React.FC = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const [billing, setBilling] = useState<'monthly' | 'yearly'>(location.state?.billing || 'monthly');
+  const [paymentType, setPaymentType] = useState<'recurring' | 'one-time'>(location.state?.paymentType || 'recurring');
   
   const amount = billing === 'yearly' ? 3229 : 299;
 
@@ -138,9 +139,27 @@ export const Subscription: React.FC = () => {
               </div>
             </div>
 
+            {/* Payment Type Toggle */}
+            <div className="flex justify-center my-8">
+              <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+                <button
+                  className={`px-6 py-2 rounded-xl font-semibold transition-colors duration-200 focus:outline-none ${paymentType === 'recurring' ? 'bg-white dark:bg-gray-900 text-primary-600 dark:text-primary-400 shadow' : 'text-gray-600 dark:text-gray-300'}`}
+                  onClick={() => setPaymentType('recurring')}
+                >
+                  Recurring
+                </button>
+                <button
+                  className={`px-6 py-2 rounded-xl font-semibold transition-colors duration-200 focus:outline-none ${paymentType === 'one-time' ? 'bg-white dark:bg-gray-900 text-primary-600 dark:text-primary-400 shadow' : 'text-gray-600 dark:text-gray-300'}`}
+                  onClick={() => setPaymentType('one-time')}
+                >
+                  One-Time
+                </button>
+              </div>
+            </div>
+
             {/* Razorpay Button Placement */}
             <div className="flex justify-center mt-8">
-              <RazorpayButton amount={amount} billing={billing} />
+              <RazorpayButton amount={amount} billing={billing} paymentType={paymentType} />
             </div>
           </div>
 

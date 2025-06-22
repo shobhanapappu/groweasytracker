@@ -1,14 +1,9 @@
 import Razorpay from 'razorpay';
 
-const razorpay = new Razorpay({
-  key_id: 'rzp_test_EZTnpbOeFo5Ga6',
-  key_secret: 'q3z8SYwyFbqs2fNzNzltvnjL',
-});
-
 // Helper to enable CORS
 const allowCors = (fn) => async (req, res) => {
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow all origins
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
@@ -21,6 +16,12 @@ const allowCors = (fn) => async (req, res) => {
   return await fn(req, res);
 };
 
+const razorpay = new Razorpay({
+  key_id: 'rzp_live_6XbictuHjDq9L1',
+  key_secret: 'aIGvLEt9TZCHMfahSNDbS2co',
+});
+
+// Main handler for creating subscriptions or one-time orders
 const handler = async (req, res) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -28,38 +29,47 @@ const handler = async (req, res) => {
   }
 
   try {
-    const { amount, billing } = req.body;
+    const { amount, billing, paymentType } = req.body;
 
-    if (!amount || isNaN(amount) || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid amount provided' });
+    if (paymentType === 'recurring') {
+      // --- Create Subscription ---
+      const planId = billing === 'monthly' ? 'plan_Qj9xEoZLc8BrGe' : 'YOUR_YEARLY_PLAN_ID'; // Replace if you have one
+      if (billing === 'yearly' && planId === 'YOUR_YEARLY_PLAN_ID') {
+        return res.status(400).json({ error: 'Yearly plan ID not configured.' });
+      }
+      
+      const subscriptionOptions = {
+        plan_id: planId,
+        customer_notify: 1,
+        total_count: billing === 'monthly' ? 12 : 1,
+      };
+
+      const subscription = await razorpay.subscriptions.create(subscriptionOptions);
+      return res.status(200).json({ subscription_id: subscription.id });
+
+    } else if (paymentType === 'one-time') {
+      // --- Create One-Time Order ---
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid amount for one-time payment.' });
+      }
+
+      const orderOptions = {
+        amount: Math.round(amount * 100),
+        currency: 'INR',
+        receipt: `receipt_${billing}_${Date.now()}`,
+      };
+
+      const order = await razorpay.orders.create(orderOptions);
+      return res.status(200).json({ order_id: order.id, amount: order.amount });
+
+    } else {
+      return res.status(400).json({ error: 'Invalid payment type provided.' });
     }
-
-    if (!billing || !['monthly', 'yearly'].includes(billing)) {
-      return res.status(400).json({ error: 'Invalid billing type provided' });
-    }
-
-    const options = {
-      amount: Math.round(amount * 100), // amount in the smallest currency unit
-      currency: 'INR',
-      receipt: `receipt_${billing}_${Date.now()}`,
-      notes: {
-        billing_type: billing,
-        description: `Premium Subscription (${billing})`,
-      },
-      payment_capture: 1,
-    };
-
-    const order = await razorpay.orders.create(options);
-    res.status(200).json({
-      order_id: order.id,
-      amount: order.amount,
-      currency: order.currency,
-    });
   } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ 
-      error: error.message || 'Failed to create order',
-      details: error.error?.description || 'Unknown error'
+    console.error('Error processing payment creation:', error);
+    res.status(500).json({
+      error: error.message || 'Failed to process payment.',
+      details: error.error?.description || 'Unknown Razorpay error.'
     });
   }
 };

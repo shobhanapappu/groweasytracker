@@ -15,43 +15,50 @@ const razorpay = new Razorpay({
   key_secret: 'aIGvLEt9TZCHMfahSNDbS2co',
 });
 
-// Create subscription endpoint
+// Endpoint to create a subscription or a one-time order
 app.post('/api/create-order', async (req, res) => {
   try {
-    const { billing } = req.body;
+    const { amount, billing, paymentType } = req.body;
 
-    if (!billing || !['monthly', 'yearly'].includes(billing)) {
-      return res.status(400).json({ error: 'Invalid billing type provided' });
+    if (paymentType === 'recurring') {
+      // --- Create Subscription ---
+      const planId = billing === 'monthly' ? 'plan_Qj9xEoZLc8BrGe' : 'YOUR_YEARLY_PLAN_ID'; // Replace with your yearly plan ID
+      if (billing === 'yearly' && planId === 'YOUR_YEARLY_PLAN_ID') {
+          return res.status(400).json({ error: 'Yearly plan ID not configured.' });
+      }
+
+      const subscriptionOptions = {
+        plan_id: planId,
+        customer_notify: 1,
+        total_count: billing === 'monthly' ? 12 : 1, // 12 monthly payments or 1 yearly payment
+      };
+
+      const subscription = await razorpay.subscriptions.create(subscriptionOptions);
+      return res.status(200).json({ subscription_id: subscription.id });
+
+    } else if (paymentType === 'one-time') {
+      // --- Create One-Time Order ---
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid amount for one-time payment.' });
+      }
+
+      const orderOptions = {
+        amount: Math.round(amount * 100), // Amount in the smallest currency unit
+        currency: 'INR',
+        receipt: `receipt_${billing}_${Date.now()}`,
+      };
+
+      const order = await razorpay.orders.create(orderOptions);
+      return res.status(200).json({ order_id: order.id, amount: order.amount });
+
+    } else {
+      return res.status(400).json({ error: 'Invalid payment type provided.' });
     }
-
-    // For now, we'll use the monthly plan ID
-    // You can add yearly plan ID later if needed
-    const planId = 'plan_Qj9xEoZLc8BrGe'; // Monthly Premium plan
-
-    const subscriptionOptions = {
-      plan_id: planId,
-      customer_notify: 1,
-      total_count: 12, // Number of payments to be made
-      notes: {
-        billing_type: billing,
-        description: `Premium Subscription (${billing})`,
-      },
-    };
-
-    const subscription = await razorpay.subscriptions.create(subscriptionOptions);
-    
-    res.status(200).json({
-      subscription_id: subscription.id,
-      plan_id: subscription.plan_id,
-      status: subscription.status,
-      current_start: subscription.current_start,
-      current_end: subscription.current_end,
-    });
   } catch (error) {
-    console.error('Error creating subscription:', error);
+    console.error('Error processing payment creation:', error);
     res.status(500).json({ 
-      error: error.message || 'Failed to create subscription',
-      details: error.error?.description || 'Unknown error'
+      error: error.message || 'Failed to process payment.',
+      details: error.error?.description || 'Unknown Razorpay error.'
     });
   }
 });

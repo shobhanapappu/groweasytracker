@@ -1,50 +1,60 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
-console.log("check-user-exists function deployed");
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { email } = await req.json()
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    const { email } = await req.json();
 
     if (!email) {
-      return new Response(JSON.stringify({ error: 'Email is required' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      })
-    }
-    
-    // Create a Supabase client with the service_role key
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
-
-    // Check if user exists by email
-    const { data, error } = await supabaseAdmin.auth.admin.getUserByEmail(email)
-
-    // 'User not found' is an expected error when the email is available
-    if (error && error.message !== 'User not found') {
-      console.error('Supabase admin error:', error)
-      throw new Error(error.message)
+      return new Response(
+        JSON.stringify({ error: 'Email is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const exists = !!data?.user;
+    const { data: user, error } = await adminClient.auth.admin.getUserByEmail(email);
 
-    return new Response(JSON.stringify({ exists }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
+    if (error) {
+       if (error.message.includes('User not found')) {
+         return new Response(JSON.stringify({ exists: false, verified: false }), {
+           status: 200,
+           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+         });
+       }
+       throw error;
+    }
+
+    const exists = !!user;
+    const verified = user?.user?.email_confirmed_at ? true : false;
+
+    return new Response(
+      JSON.stringify({ exists, verified }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
-    console.error('Function error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    })
+    console.error('Error checking user existence:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-}) 
+}); 
